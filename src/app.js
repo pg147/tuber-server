@@ -24,4 +24,9 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware - for serving static files
 app.use(express.static('public'));
 
+// Route imports
+import userRouter from "./routes/user.route.js";
+
+app.use('/api/v1/users', userRouter);
+
 export { app };
