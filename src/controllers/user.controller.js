@@ -31,13 +31,14 @@ const createUser = asyncHandler(async (req, res) => {
     let coverLocalPath;
 
     // Only if Avatar or Cover image is present    
-    if ((req.files && req.files.avatar.length > 0) || (req.files && req.files.coverImage.length > 0)) {
+    if (req.files && req.files.avatar) {
         avatarLocalPath = req.files?.avatar[0]?.path;
+    } else if (req.files && req.files.coverImage) {
         coverLocalPath = req.files?.coverImage[0]?.path;
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverLocalPath);
+    const avatar = avatarLocalPath ? await uploadOnCloudinary(avatarLocalPath) : "";
+    const coverImage = coverLocalPath ? await uploadOnCloudinary(coverLocalPath) : "";
 
     // Create a new user with User Model
     const user = await User.create({
