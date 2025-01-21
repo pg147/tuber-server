@@ -27,19 +27,17 @@ const createUser = asyncHandler(async (req, res) => {
     };
 
     // Fetching images from req
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverLocalPath = req.files?.coverImage[0]?.path;
-    let avatarURL;
-    let coverImageURL;
+    let avatarLocalPath;
+    let coverLocalPath;
 
-    // Only if Avatar or Cover image is present
-    if (avatarLocalPath || coverLocalPath) {
-        const uploadAvatar = uploadOnCloudinary(avatarLocalPath);
-        if (uploadAvatar) avatarURL = uploadAvatar.secure_url;
-
-        const uploadCoverImage = uploadOnCloudinary(coverLocalPath);
-        if (uploadCoverImage) coverImageURL = uploadCoverImage.secure_url;
+    // Only if Avatar or Cover image is present    
+    if ((req.files && req.files.avatar.length > 0) || (req.files && req.files.coverImage.length > 0)) {
+        avatarLocalPath = req.files?.avatar[0]?.path;
+        coverLocalPath = req.files?.coverImage[0]?.path;
     }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    const coverImage = await uploadOnCloudinary(coverLocalPath);
 
     // Create a new user with User Model
     const user = await User.create({
@@ -47,8 +45,8 @@ const createUser = asyncHandler(async (req, res) => {
         fullName: fullName,
         email: email,
         password: password,
-        avatar: avatarURL ? avatarURL : null,
-        coverImage: coverImageURL ? coverImageURL : null
+        avatar: avatar?.url || "",
+        coverImage: coverImage?.url || ""
     });
 
     // Fetching created user except pwd and token
