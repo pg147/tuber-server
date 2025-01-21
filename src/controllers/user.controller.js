@@ -7,15 +7,17 @@ const generateTokens = async (userId) => {
         const user = await User.findById(userId);
         let accessToken;
         let refreshToken;
-    
+
         if (user) {
             accessToken = await user.generateAccessToken();
             refreshToken = await user.generateRefreshToken();
 
             user.refreshToken = refreshToken;
-            await user.save();
+            await user.save({
+                validateBeforeSave: false
+            });
         }
-        
+
         return { accessToken, refreshToken };
     } catch (error) {
         console.log("Error generating tokens : ", error.message);
@@ -123,21 +125,63 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     // Generating tokens
-    const tokens = await generateTokens(user._id);
+    const { accessToken, refreshToken } = await generateTokens(user._id);
 
     // If token creation fails
-    if (!tokens) {
+    if (!accessToken || !refreshToken) {
         return res.status(400).json({
             success: false,
             message: 'Error generating tokens!'
         });
     }
 
-    return res.status(200).json({
-        success: true,
-        message: `${email} logged in successfully!`,
-        tokens: tokens
-    })
+    // Logged-in user
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+    // Options for cookies
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json({
+            success: true,
+            message: `${email} logged in successfully!`,
+            user: loggedInUser, accessToken, refreshToken
+        })
 });
 
-export { createUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+    const loggedOut = await User.findByIdAndUpdate(req.user._id, {
+        $unset: {
+            refreshToken: ""
+        }
+    }, { new: true });
+
+    if (!loggedOut) {
+        return res.status(400).json({
+            success: false,
+            message: "Unable to log out ! try again later."
+        })
+    }
+
+    // Cookie options
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    return res.status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json({
+            success: true,
+            message: "User logged out successfully!",
+        });
+});
+
+export { createUser, loginUser, logoutUser };
