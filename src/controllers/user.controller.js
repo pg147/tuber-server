@@ -1,6 +1,7 @@
 import { User } from '../models/user.model.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import jwt from "jsonwebtoken";
 
 const generateTokens = async (userId) => {
     try {
@@ -184,4 +185,67 @@ const logoutUser = asyncHandler(async (req, res) => {
         });
 });
 
-export { createUser, loginUser, logoutUser };
+const renewAccessToken = async (req, res) => {
+    const cookieRefreshToken = req.cookies?.refreshToken || req.body.cookies;
+
+    if (!cookieRefreshToken) {
+        return res.status(401).json({
+            success: false,
+            message: "Unauthorized access!"
+        });
+    }
+
+    try {
+        // Decoding received refresh token
+        const decodedRefreshToken = jwt.verify(cookieRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        // Fetching user using id from decoded token
+        const user = await User.findById(decodedRefreshToken?._id).select("-password");
+
+        // If no user is found with the decoded token id
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid refresh token!"
+            });
+        }
+
+        // If received refresh token and stored refresh token don't match
+        if (user?.refreshToken !== cookieRefreshToken) {
+            return res.status(400).json({
+                success: false,
+                message: "Refresh Token has expired or used"
+            });
+        }
+
+        // Generating tokens
+        const { accessToken, refreshToken } = await generateTokens(user._id);
+
+        // If token creation fails
+        if (!accessToken || !refreshToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'Error generating tokens!'
+            });
+        }
+
+        // Cookie options
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res.status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json({
+                success: true,
+                message: "Token renewed successfully!"
+            });
+
+    } catch (error) {
+        console.log("Error renewing token : ", error.message);
+    }
+}
+
+export { createUser, loginUser, logoutUser, renewAccessToken };
