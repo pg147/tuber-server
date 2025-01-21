@@ -19,6 +19,7 @@ const uploadOnCloudinary = async (localFilePath) => {
             resource_type: 'auto'
         });
 
+        fs.unlinkSync(localFilePath);  // remove the temp image/file from the server
         return response;
     } catch (error) {
         fs.unlinkSync(localFilePath);  // remove the temp image/file from the server
