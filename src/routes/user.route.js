@@ -1,6 +1,6 @@
 import express from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { createUser } from "../controllers/user.controller.js";
+import { createUser, loginUser } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
@@ -13,6 +13,8 @@ router.post('/create', upload.fields([
         name: 'coverImage',
         maxCount: 1
     }
-]), createUser)
+]), createUser);
+
+router.get('/login', loginUser);
 
 export default router;
