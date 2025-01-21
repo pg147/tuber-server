@@ -1,8 +1,13 @@
 import express from "express";
-import { upload } from "../middlewares/multer.middleware.js";
-import { createUser, loginUser } from "../controllers/user.controller.js";
 
-const router = express.Router();
+// Controllers
+import { createUser, loginUser, logoutUser } from "../controllers/user.controller.js";
+
+// Middlewares
+import { upload } from "../middlewares/multer.middleware.js";
+import { verifyToken } from "../middlewares/auth.middleware.js";
+
+const router = express.Router();  // user router
 
 router.post('/create', upload.fields([
     {
@@ -13,8 +18,11 @@ router.post('/create', upload.fields([
         name: 'coverImage',
         maxCount: 1
     }
-]), createUser);
+]), createUser);  // signup
 
-router.get('/login', loginUser);
+router.post('/login', loginUser);  // login
+
+// Secured routes ( middlewares )
+router.post('/logout', verifyToken, logoutUser);  // logout
 
 export default router;
