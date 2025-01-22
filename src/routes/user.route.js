@@ -1,7 +1,7 @@
 import express from "express";
 
 // Controllers
-import { createUser, loginUser, logoutUser } from "../controllers/user.controller.js";
+import { createUser, loginUser, logoutUser, renewAccessToken } from "../controllers/user.controller.js";
 
 // Middlewares
 import { upload } from "../middlewares/multer.middleware.js";
@@ -24,5 +24,6 @@ router.post('/login', loginUser);  // login
 
 // Secured routes ( middlewares )
 router.post('/logout', verifyToken, logoutUser);  // logout
+router.post('/refresh-token', renewAccessToken); // token renewal 
 
 export default router;
