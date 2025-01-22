@@ -248,4 +248,38 @@ const renewAccessToken = async (req, res) => {
     }
 }
 
-export { createUser, loginUser, logoutUser, renewAccessToken };
+const changeCurrentPassword = async (req, res) => {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (newPassword !== confirmPassword) return res.status(400).json({
+        success: false,
+        message: "New Password and Confirm password don't match"
+    });
+
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: "You need to login first!"
+        });
+    }
+
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordCorrect) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid old password!"
+        })
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({
+        success: true,
+        message: "Password updated successfully!",
+    });
+}
+
+export { createUser, loginUser, logoutUser, renewAccessToken, changeCurrentPassword };
