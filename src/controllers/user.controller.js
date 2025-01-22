@@ -248,7 +248,7 @@ const renewAccessToken = async (req, res) => {
     }
 }
 
-const changeCurrentPassword = async (req, res) => {
+const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword, confirmPassword } = req.body;
     const user = await User.findById(req.user._id);
 
@@ -280,6 +280,56 @@ const changeCurrentPassword = async (req, res) => {
         success: true,
         message: "Password updated successfully!",
     });
-}
+})
 
-export { createUser, loginUser, logoutUser, renewAccessToken, changeCurrentPassword };
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({
+        success: false,
+        message: "No user found!"
+    });
+
+    return res.status(200).json({
+        success: true,
+        user
+    });
+})
+
+const updateUserDetails = asyncHandler(async (req, res) => {
+    const { fullName, email } = req.body;
+    const user = req.user;
+
+    if (!fullName || !email) return res.status(400).json({
+        success: false,
+        message: "All fields are required!"
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, {
+        $set: {
+            fullName,
+            email
+        }
+    }, { new: true }).select("-password");
+
+    if (!updatedUser) return res.status(400).json({
+        success: false,
+        message: "Error updating user"
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "User updated successfully!",
+        updatedUser
+    });
+})
+
+export { 
+    createUser, 
+    loginUser, 
+    logoutUser, 
+    renewAccessToken, 
+    changeCurrentPassword, 
+    getCurrentUser,
+    updateUserDetails 
+};
