@@ -324,12 +324,80 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     });
 })
 
-export { 
-    createUser, 
-    loginUser, 
-    logoutUser, 
-    renewAccessToken, 
-    changeCurrentPassword, 
+const updateAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path;
+
+    if (!avatarLocalPath) return res.status(400).json({
+        success: false,
+        message: "Please provide an avatar!"
+    });
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (!avatar) return res.status(400).json({
+        success: false,
+        message: "Error uploading avatar."
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(req.user._id, {
+        $set: {
+            avatar: avatar?.url
+        }
+    }, { new: true }).select("-password -refreshToken");
+
+    if (!updatedUser) return res.status(400).json({
+        success: false,
+        message: "Error updating avatar!"
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Avatar updated successfully!",
+        avatar: updatedUser.avatar
+    });
+})
+
+const updateCoverImage = asyncHandler(async (req, res) => {
+    const coverImageLocalPath = req.file?.path;
+
+    if (!coverImageLocalPath) return res.status(400).json({
+        success: false,
+        message: "Please provide a cover image!"
+    });
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+    if (!coverImage) return res.status(400).json({
+        success: false,
+        message: "Error uploading cover image."
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(req.user._id, {
+        $set: {
+            coverImage: coverImage?.url
+        }
+    }, { new: true }).select("-password -refreshToken");
+
+    if (!updatedUser) return res.status(400).json({
+        success: false,
+        message: "Error updating cover image!"
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Cover image updated successfully!",
+        coverImage: updatedUser.coverImage
+    });
+})
+
+export {
+    createUser,
+    loginUser,
+    logoutUser,
+    renewAccessToken,
+    changeCurrentPassword,
     getCurrentUser,
-    updateUserDetails 
+    updateUserDetails,
+    updateAvatar,
+    updateCoverImage
 };
